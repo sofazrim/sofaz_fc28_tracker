@@ -1,3 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOFAZ Fc28 Tracker™</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
+header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
+header img {height:80px; margin-bottom:10px;}
+main {max-width:600px; margin:40px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.1);}
+h1, h2 {text-align:center;}
+label {display:block; margin-top:15px;}
+input[type="number"], input[type="date"], input[type="text"] {width:100%; padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;}
+button {background-color: #4da6ff; color:white; border:none; padding:12px 20px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:20px; width:100%;}
+button:hover {background-color: #3399ff;}
+#result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
+.result-line {display:block;}
+</style>
+</head>
+<body>
+
+<header>
+    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ" id="logo_header">
+    <h1>SOFAZ Fc28 Tracker™</h1>
+</header>
+
+<main>
+<h2>Calcul de résistance béton (Fc28)</h2>
+
+<label for="titre_projet">Titre du projet :</label>
+<input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
+
+<label for="lieu_test">Endroit du test :</label>
+<input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
+
+<label for="date_coulage">Date de coulage :</label>
+<input type="date" id="date_coulage">
+
+<label for="date_test">Date du test :</label>
+<input type="date" id="date_test">
+
+<label for="resistance">Résistance mesurée (MPa) :</label>
+<input type="number" id="resistance" placeholder="Ex: 18">
+
+<label for="fc28">Fc28 projet (MPa) :</label>
+<input type="number" id="fc28" placeholder="Ex: 25">
+
+<button onclick="calculFc28()">Calculer Fc28</button>
+<button onclick="exportPDF()">Exporter PDF</button>
+
+<div id="result"></div>
+</main>
+
+<script>
+let lastResult = null;
+
 function calculFc28() {
     const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
     const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
@@ -23,7 +81,7 @@ function calculFc28() {
         return;
     }
 
-    // Calcul exact Fc28
+    // Calcul Fc28
     const res28 = resJour * Math.pow(28/age, 0.5);
     const conforme = res28 >= fc28Projet;
 
@@ -55,7 +113,7 @@ function exportPDF(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Logo SOFAZ en haut
+    // Logo
     const img = document.getElementById("logo_header");
     const canvas = document.createElement("canvas");
     canvas.width = img.width; canvas.height = img.height;
@@ -85,3 +143,7 @@ function exportPDF(){
 
     doc.save("rapport_fc28.pdf");
 }
+</script>
+
+</body>
+</html>
