@@ -1,13 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-<title>SOFAZ Fc28 Tracker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOFAZ Fc28 Tracker™</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f5f7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #ff3366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header img {
+            height: 60px;
+            vertical-align: middle;
+        }
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #ff3366;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #e62e5c;
+        }
+        #result {
+            margin-top: 25px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
 </head>
-
 <body>
+<header>
+    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
+    <h1>SOFAZ Fc28 Tracker™</h1>
+</header>
 
-<h1>Bienvenue dans SOFAZ Fc28 Tracker™</h1>
-<p>Serveur opérationnel.</p>
+<main>
+    <h2>Calcul de résistance béton (Fc28)</h2>
+
+    <label for="fck">Résistance initiale (MPa) :</label>
+    <input type="number" id="fck" placeholder="Ex: 25">
+
+    <label for="age">Âge du béton (jours) :</label>
+    <input type="number" id="age" placeholder="Ex: 28">
+
+    <button onclick="calculFc28()">Calculer Fc28</button>
+
+    <div id="result"></div>
+</main>
+
+<script>
+function calculFc28() {
+    let fck = parseFloat(document.getElementById('fck').value);
+    let age = parseFloat(document.getElementById('age').value);
+
+    if (isNaN(fck) || isNaN(age) || fck <=0 || age <=0) {
+        document.getElementById('result').innerHTML = "⚠️ Veuillez entrer des valeurs valides.";
+        return;
+    }
+
+    // Formule simple pour Fc28 (exemple)
+    let fc28 = fck * Math.pow((28/age), 0.2);
+    fc28 = Math.round(fc28 * 100) / 100;
+
+    document.getElementById('result').innerHTML = `💪 Fc28 estimé : ${fc28} MPa`;
+}
+</script>
 
 </body>
 </html>
