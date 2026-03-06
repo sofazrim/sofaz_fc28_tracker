@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Calcul Fc28</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>Calcul Fc28</h1>
+
+<form method="post">
+
+<label>Date :</label>
+<input name="date">
+
+<label>Age béton (jours)</label>
+<input name="age">
+
+<label>Résistance mesurée MPa</label>
+<input name="resistance">
+
+<label>Fc28 projet</label>
+<input name="fc28">
+
+<button type="submit">Calculer</button>
+
+</form>
+
+{% if result %}
+
+<h2 style="color:{{ 'green' if result.conforme else 'red' }}">
+
+Fc28 estimée = {{result.res_28}} MPa
+
+{% if result.conforme %}
+✅ Conforme
+{% else %}
+❌ Non Conforme
+{% endif %}
+
+</h2>
+
+{% endif %}
+
+</body>
+</html>
