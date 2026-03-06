@@ -1,94 +1,50 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SOFAZ Fc28 Tracker™</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
-header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
-header img {height:80px; margin-bottom:10px;}
-main {max-width:600px; margin:40px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.1);}
-h1, h2 {text-align:center;}
-label {display:block; margin-top:15px;}
-input[type="number"], input[type="date"], input[type="text"] {width:100%; padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;}
-button {background-color: #4da6ff; color:white; border:none; padding:12px 20px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:20px; width:100%;}
-button:hover {background-color: #3399ff;}
-#result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
-.result-line {display:block;}
-</style>
-</head>
-<body>
-
-<header>
-    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ" id="logo_header">
-    <h1>SOFAZ Fc28 Tracker™</h1>
-</header>
-
-<main>
-<h2>Calcul de résistance béton (Fc28)</h2>
-
-<label for="titre_projet">Titre du projet :</label>
-<input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
-
-<label for="lieu_test">Endroit du test :</label>
-<input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
-
-<label for="date_coulage">Date de coulage :</label>
-<input type="date" id="date_coulage">
-
-<label for="age">Âge du béton (jours) :</label>
-<input type="number" id="age" placeholder="Ex: 7">
-
-<label for="resistance">Résistance mesurée (MPa) :</label>
-<input type="number" id="resistance" placeholder="Ex: 18">
-
-<label for="fc28">Fc28 projet (MPa) :</label>
-<input type="number" id="fc28" placeholder="Ex: 25">
-
-<button onclick="calculFc28()">Calculer Fc28</button>
-<button onclick="exportPDF()">Exporter PDF</button>
-
-<div id="result"></div>
-</main>
-
-<script>
-let lastResult = ""; // stocker pour le PDF
-
 function calculFc28() {
     const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
     const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
-    const dateCoulage = document.getElementById('date_coulage').value;
-    const age = parseFloat(document.getElementById('age').value);
+    const dateCoulageStr = document.getElementById('date_coulage').value;
+    const dateTestStr = document.getElementById('date_test').value;
     const resJour = parseFloat(document.getElementById('resistance').value);
     const fc28Projet = parseFloat(document.getElementById('fc28').value);
 
-    if(!dateCoulage || isNaN(age) || isNaN(resJour) || isNaN(fc28Projet) || age<=0 || resJour<=0 || fc28Projet<=0){
+    if(!dateCoulageStr || !dateTestStr || isNaN(resJour) || isNaN(fc28Projet) || resJour<=0 || fc28Projet<=0){
         document.getElementById('result').innerText = "⚠️ Veuillez entrer des valeurs valides.";
         document.getElementById('result').style.color = "red";
         return;
     }
 
+    const dateCoulage = new Date(dateCoulageStr);
+    const dateTest = new Date(dateTestStr);
+
+    // Calcul automatique de l'âge du béton
+    const age = Math.round((dateTest - dateCoulage)/(1000*60*60*24));
+    if(age <= 0){
+        document.getElementById('result').innerText = "⚠️ La date de test doit être après la date de coulage.";
+        document.getElementById('result').style.color = "red";
+        return;
+    }
+
+    // Calcul exact Fc28
     const res28 = resJour * Math.pow(28/age, 0.5);
-    const dateTest = new Date(dateCoulage);
-    dateTest.setDate(dateTest.getDate() + age);
     const conforme = res28 >= fc28Projet;
 
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = `
 Projet : ${titreProjet}
 Endroit du test : ${lieuTest}
+Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}
 Date du test : ${dateTest.toLocaleDateString('fr-FR')}
 Âge du béton : ${age} jours
-Fc estimée à 28j : ${res28.toFixed(2)} MPa
+Fc estimée : ${res28.toFixed(2)} MPa
 Fc28 projet : ${fc28Projet} MPa
 <span class="result-line" style="color:${conforme ? 'green' : 'red'}">
 ${conforme ? 'Résultat : Conforme' : 'Résultat : Non Conforme'}
 </span>
 `;
+
     lastResult = {
-        titreProjet, lieuTest, dateTest: dateTest.toLocaleDateString('fr-FR'),
+        titreProjet, lieuTest,
+        dateCoulage: dateCoulage.toLocaleDateString('fr-FR'),
+        dateTest: dateTest.toLocaleDateString('fr-FR'),
         age, res28: res28.toFixed(2), fc28Projet, conforme
     };
 }
@@ -99,7 +55,7 @@ function exportPDF(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Ajouter le logo
+    // Logo SOFAZ en haut
     const img = document.getElementById("logo_header");
     const canvas = document.createElement("canvas");
     canvas.width = img.width; canvas.height = img.height;
@@ -114,18 +70,18 @@ function exportPDF(){
     doc.text("---------------------------------------------", 20, 70);
 
     doc.setFontSize(14);
-    doc.text(`Projet : ${lastResult.titreProjet}`, 20, 80);
-    doc.text(`Endroit du test : ${lastResult.lieuTest}`, 20, 90);
-    doc.text(`Date du test : ${lastResult.dateTest}`, 20, 100);
-    doc.text(`Âge du béton : ${lastResult.age} jours`, 20, 110);
-    doc.text(`Fc estimée à 28j : ${lastResult.res28} MPa`, 20, 120);
-    doc.text(`Fc28 projet : ${lastResult.fc28Projet} MPa`, 20, 130);
+    const startY = 80;
+    const lineHeight = 10;
+    doc.text(`Projet : ${lastResult.titreProjet}`, 20, startY);
+    doc.text(`Endroit du test : ${lastResult.lieuTest}`, 20, startY + lineHeight);
+    doc.text(`Date de coulage : ${lastResult.dateCoulage}`, 20, startY + lineHeight*2);
+    doc.text(`Date du test : ${lastResult.dateTest}`, 20, startY + lineHeight*3);
+    doc.text(`Âge du béton : ${lastResult.age} jours`, 20, startY + lineHeight*4);
+    doc.text(`Fc estimée : ${lastResult.res28} MPa`, 20, startY + lineHeight*5);
+    doc.text(`Fc28 projet : ${lastResult.fc28Projet} MPa`, 20, startY + lineHeight*6);
+
     doc.setTextColor(lastResult.conforme ? 0 : 255, 0, 0); // rouge si non conforme
-    doc.text(lastResult.conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, 140);
+    doc.text(lastResult.conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, startY + lineHeight*7);
 
     doc.save("rapport_fc28.pdf");
 }
-</script>
-
-</body>
-</html>
