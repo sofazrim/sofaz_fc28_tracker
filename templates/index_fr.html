@@ -1,107 +1,141 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOFAZ Fc28 Tracker™</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f5f7;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #ff3366;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        header img {
-            height: 60px;
-            vertical-align: middle;
-        }
-        main {
-            max-width: 600px;
-            margin: 40px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        label {
-            display: block;
-            margin: 15px 0 5px;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #ff3366;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #e62e5c;
-        }
-        #result {
-            margin-top: 25px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 18px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOFAZ Fc28 Tracker™</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f5f7;
+    margin: 0; padding: 0;
+}
+header {
+    background-color: #4da6ff; /* bleu clair */
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+header img {
+    height: 80px;
+    margin-bottom: 10px;
+}
+main {
+    max-width: 600px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+h1, h2 {
+    text-align: center;
+}
+label {
+    display: block;
+    margin-top: 15px;
+}
+input[type="number"], input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+button {
+    background-color: #4da6ff;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+}
+button:hover {
+    background-color: #3399ff;
+}
+#result {
+    margin-top: 25px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 18px;
+    white-space: pre-line;
+}
+</style>
 </head>
 <body>
+
 <header>
     <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
     <h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
 <main>
-    <h2>Calcul de résistance béton (Fc28)</h2>
+<h2>Calcul de résistance béton (Fc28)</h2>
 
-    <label for="fck">Résistance initiale (MPa) :</label>
-    <input type="number" id="fck" placeholder="Ex: 25">
+<label for="date_coulage">Date de coulage :</label>
+<input type="date" id="date_coulage">
 
-    <label for="age">Âge du béton (jours) :</label>
-    <input type="number" id="age" placeholder="Ex: 28">
+<label for="age">Âge du béton (jours) :</label>
+<input type="number" id="age" placeholder="Ex: 7">
 
-    <button onclick="calculFc28()">Calculer Fc28</button>
+<label for="resistance">Résistance mesurée (MPa) :</label>
+<input type="number" id="resistance" placeholder="Ex: 18">
 
-    <div id="result"></div>
+<label for="fc28">Fc28 projet (MPa) :</label>
+<input type="number" id="fc28" placeholder="Ex: 25">
+
+<button onclick="calculFc28()">Calculer Fc28</button>
+<button onclick="exportPDF()">Exporter PDF</button>
+
+<div id="result"></div>
 </main>
 
 <script>
 function calculFc28() {
-    let fck = parseFloat(document.getElementById('fck').value);
-    let age = parseFloat(document.getElementById('age').value);
+    const dateCoulage = document.getElementById('date_coulage').value;
+    const age = parseFloat(document.getElementById('age').value);
+    const resJour = parseFloat(document.getElementById('resistance').value);
+    const fc28Projet = parseFloat(document.getElementById('fc28').value);
 
-    if (isNaN(fck) || isNaN(age) || fck <=0 || age <=0) {
-        document.getElementById('result').innerHTML = "⚠️ Veuillez entrer des valeurs valides.";
+    if(!dateCoulage || isNaN(age) || isNaN(resJour) || isNaN(fc28Projet) || age<=0 || resJour<=0 || fc28Projet<=0){
+        document.getElementById('result').innerText = "⚠️ Veuillez entrer des valeurs valides.";
+        document.getElementById('result').style.color = "red";
         return;
     }
 
-    // Formule simple pour Fc28 (exemple)
-    let fc28 = fck * Math.pow((28/age), 0.2);
-    fc28 = Math.round(fc28 * 100) / 100;
+    // Calcul exact comme ton code Python
+    const res28 = resJour * Math.pow(28/age, 0.5);
+    const dateTest = new Date(dateCoulage);
+    dateTest.setDate(dateTest.getDate() + age);
+    const conforme = res28 >= fc28Projet;
 
-    document.getElementById('result').innerHTML = `💪 Fc28 estimé : ${fc28} MPa`;
+    const couleur = conforme ? "green" : "red";
+    document.getElementById('result').style.color = couleur;
+
+    const resultText = `📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}\n` +
+                       `🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa\n` +
+                       `🎯 Fc28 projet : ${fc28Projet} MPa\n` +
+                       `${conforme ? "✅ Résultat : Conforme" : "❌ Résultat : Non Conforme"}`;
+
+    document.getElementById('result').innerText = resultText;
+}
+
+// Export PDF simple avec jspdf
+function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const resultText = document.getElementById('result').innerText || "Aucun résultat à exporter.";
+    doc.setFontSize(16);
+    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 20, null, null, "center");
+    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 30, null, null, "center");
+    doc.text("---------------------------------------------", 105, 40, null, null, "center");
+    doc.setFontSize(14);
+    doc.text(resultText, 20, 60);
+    doc.save("rapport_fc28.pdf");
 }
 </script>
 
