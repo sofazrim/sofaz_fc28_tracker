@@ -15,8 +15,6 @@ label {display:block; margin-top:15px;}
 input[type="number"], input[type="date"], input[type="text"] {width:100%; padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;}
 button {background-color: #4da6ff; color:white; border:none; padding:12px 20px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:20px; width:100%;}
 button:hover {background-color: #3399ff;}
-#result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
-.result-line {display:block;}
 </style>
 </head>
 <body>
@@ -27,7 +25,7 @@ button:hover {background-color: #3399ff;}
 </header>
 
 <main>
-<h2>Calcul de résistance béton (Fc28)</h2>
+<h2>Exporter PDF Fc28</h2>
 
 <label for="titre_projet">Titre du projet :</label>
 <input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
@@ -47,16 +45,12 @@ button:hover {background-color: #3399ff;}
 <label for="fc28">Fc28 projet (MPa) :</label>
 <input type="number" id="fc28" placeholder="Ex: 25">
 
-<button onclick="calculFc28()">Calculer Fc28</button>
 <button onclick="exportPDF()">Exporter PDF</button>
 
-<div id="result"></div>
 </main>
 
 <script>
-let lastResult = null;
-
-function calculFc28() {
+function exportPDF(){
     const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
     const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
     const dateCoulageStr = document.getElementById('date_coulage').value;
@@ -65,50 +59,20 @@ function calculFc28() {
     const fc28Projet = parseFloat(document.getElementById('fc28').value);
 
     if(!dateCoulageStr || !dateTestStr || isNaN(resJour) || isNaN(fc28Projet) || resJour<=0 || fc28Projet<=0){
-        document.getElementById('result').innerText = "⚠️ Veuillez entrer des valeurs valides.";
-        document.getElementById('result').style.color = "red";
+        alert("⚠️ Veuillez entrer des valeurs valides.");
         return;
     }
 
     const dateCoulage = new Date(dateCoulageStr);
     const dateTest = new Date(dateTestStr);
-
-    // Calcul automatique de l'âge du béton
     const age = Math.round((dateTest - dateCoulage)/(1000*60*60*24));
     if(age <= 0){
-        document.getElementById('result').innerText = "⚠️ La date de test doit être après la date de coulage.";
-        document.getElementById('result').style.color = "red";
+        alert("⚠️ La date de test doit être après la date de coulage.");
         return;
     }
 
-    // Calcul Fc28
     const res28 = resJour * Math.pow(28/age, 0.5);
     const conforme = res28 >= fc28Projet;
-
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = `
-Projet : ${titreProjet}
-Endroit du test : ${lieuTest}
-Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}
-Date du test : ${dateTest.toLocaleDateString('fr-FR')}
-Âge du béton : ${age} jours
-Fc estimée : ${res28.toFixed(2)} MPa
-Fc28 projet : ${fc28Projet} MPa
-<span class="result-line" style="color:${conforme ? 'green' : 'red'}">
-${conforme ? 'Résultat : Conforme' : 'Résultat : Non Conforme'}
-</span>
-`;
-
-    lastResult = {
-        titreProjet, lieuTest,
-        dateCoulage: dateCoulage.toLocaleDateString('fr-FR'),
-        dateTest: dateTest.toLocaleDateString('fr-FR'),
-        age, res28: res28.toFixed(2), fc28Projet, conforme
-    };
-}
-
-function exportPDF(){
-    if(!lastResult) { alert("Veuillez calculer le résultat avant d'exporter."); return; }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -130,16 +94,16 @@ function exportPDF(){
     doc.setFontSize(14);
     const startY = 80;
     const lineHeight = 10;
-    doc.text(`Projet : ${lastResult.titreProjet}`, 20, startY);
-    doc.text(`Endroit du test : ${lastResult.lieuTest}`, 20, startY + lineHeight);
-    doc.text(`Date de coulage : ${lastResult.dateCoulage}`, 20, startY + lineHeight*2);
-    doc.text(`Date du test : ${lastResult.dateTest}`, 20, startY + lineHeight*3);
-    doc.text(`Âge du béton : ${lastResult.age} jours`, 20, startY + lineHeight*4);
-    doc.text(`Fc estimée : ${lastResult.res28} MPa`, 20, startY + lineHeight*5);
-    doc.text(`Fc28 projet : ${lastResult.fc28Projet} MPa`, 20, startY + lineHeight*6);
+    doc.text(`Projet : ${titreProjet}`, 20, startY);
+    doc.text(`Endroit du test : ${lieuTest}`, 20, startY + lineHeight);
+    doc.text(`Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}`, 20, startY + lineHeight*2);
+    doc.text(`Date du test : ${dateTest.toLocaleDateString('fr-FR')}`, 20, startY + lineHeight*3);
+    doc.text(`Âge du béton : ${age} jours`, 20, startY + lineHeight*4);
+    doc.text(`Fc estimée : ${res28.toFixed(2)} MPa`, 20, startY + lineHeight*5);
+    doc.text(`Fc28 projet : ${fc28Projet} MPa`, 20, startY + lineHeight*6);
 
-    doc.setTextColor(lastResult.conforme ? 0 : 255, 0, 0); // rouge si non conforme
-    doc.text(lastResult.conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, startY + lineHeight*7);
+    doc.setTextColor(conforme ? 0 : 255, 0, 0);
+    doc.text(conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, startY + lineHeight*7);
 
     doc.save("rapport_fc28.pdf");
 }
