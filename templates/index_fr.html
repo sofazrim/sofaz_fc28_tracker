@@ -64,12 +64,16 @@ button:hover {
     font-size: 18px;
     white-space: pre-line;
 }
+.result-line {
+    display: block;
+}
 </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
+    <!-- Logo corrigé : utilisez le chemin réel ou URL directe de votre logo PNG -->
+    <img src="logo_sofaz.png" alt="Logo SOFAZ">
     <h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
@@ -113,15 +117,15 @@ function calculFc28() {
     dateTest.setDate(dateTest.getDate() + age);
     const conforme = res28 >= fc28Projet;
 
-    const couleur = conforme ? "green" : "red";
-    document.getElementById('result').style.color = couleur;
-
-    const resultText = `📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}\n` +
-                       `🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa\n` +
-                       `🎯 Fc28 projet : ${fc28Projet} MPa\n` +
-                       `${conforme ? "✅ Résultat : Conforme" : "❌ Résultat : Non Conforme"}`;
-
-    document.getElementById('result').innerText = resultText;
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = `
+📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}
+🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa
+🎯 Fc28 projet : ${fc28Projet} MPa
+<span class="result-line" style="color:${conforme ? 'green' : 'red'}">
+${conforme ? '✅ Résultat : Conforme' : '❌ Résultat : Non Conforme'}
+</span>
+`;
 }
 
 // Export PDF simple avec jspdf
