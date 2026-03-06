@@ -6,79 +6,34 @@
 <title>SOFAZ Fc28 Tracker™</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f2f5f7;
-    margin: 0; padding: 0;
-}
-header {
-    background-color: #4da6ff; /* bleu clair */
-    color: white;
-    padding: 20px;
-    text-align: center;
-}
-header img {
-    height: 80px;
-    margin-bottom: 10px;
-}
-main {
-    max-width: 600px;
-    margin: 40px auto;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-}
-h1, h2 {
-    text-align: center;
-}
-label {
-    display: block;
-    margin-top: 15px;
-}
-input[type="number"], input[type="date"] {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
-button {
-    background-color: #4da6ff;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 20px;
-    width: 100%;
-}
-button:hover {
-    background-color: #3399ff;
-}
-#result {
-    margin-top: 25px;
-    font-weight: bold;
-    text-align: center;
-    font-size: 18px;
-    white-space: pre-line;
-}
-.result-line {
-    display: block;
-}
+body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
+header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
+header img {height:80px; margin-bottom:10px;}
+main {max-width:600px; margin:40px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.1);}
+h1, h2 {text-align:center;}
+label {display:block; margin-top:15px;}
+input[type="number"], input[type="date"], input[type="text"] {width:100%; padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;}
+button {background-color: #4da6ff; color:white; border:none; padding:12px 20px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:20px; width:100%;}
+button:hover {background-color: #3399ff;}
+#result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
+.result-line {display:block;}
 </style>
 </head>
 <body>
 
 <header>
-    <!-- Logo corrigé : utilisez le chemin réel ou URL directe de votre logo PNG -->
-    <img src="logo_sofaz.png" alt="Logo SOFAZ">
+    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ" id="logo_header">
     <h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
 <main>
 <h2>Calcul de résistance béton (Fc28)</h2>
+
+<label for="titre_projet">Titre du projet :</label>
+<input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
+
+<label for="lieu_test">Endroit du test :</label>
+<input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
 
 <label for="date_coulage">Date de coulage :</label>
 <input type="date" id="date_coulage">
@@ -99,7 +54,11 @@ button:hover {
 </main>
 
 <script>
+let lastResult = ""; // stocker pour le PDF
+
 function calculFc28() {
+    const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
+    const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
     const dateCoulage = document.getElementById('date_coulage').value;
     const age = parseFloat(document.getElementById('age').value);
     const resJour = parseFloat(document.getElementById('resistance').value);
@@ -111,7 +70,6 @@ function calculFc28() {
         return;
     }
 
-    // Calcul exact comme ton code Python
     const res28 = resJour * Math.pow(28/age, 0.5);
     const dateTest = new Date(dateCoulage);
     dateTest.setDate(dateTest.getDate() + age);
@@ -119,26 +77,52 @@ function calculFc28() {
 
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = `
-📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}
-🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa
-🎯 Fc28 projet : ${fc28Projet} MPa
+Projet : ${titreProjet}
+Endroit du test : ${lieuTest}
+Date du test : ${dateTest.toLocaleDateString('fr-FR')}
+Âge du béton : ${age} jours
+Fc estimée à 28j : ${res28.toFixed(2)} MPa
+Fc28 projet : ${fc28Projet} MPa
 <span class="result-line" style="color:${conforme ? 'green' : 'red'}">
-${conforme ? '✅ Résultat : Conforme' : '❌ Résultat : Non Conforme'}
+${conforme ? 'Résultat : Conforme' : 'Résultat : Non Conforme'}
 </span>
 `;
+    lastResult = {
+        titreProjet, lieuTest, dateTest: dateTest.toLocaleDateString('fr-FR'),
+        age, res28: res28.toFixed(2), fc28Projet, conforme
+    };
 }
 
-// Export PDF simple avec jspdf
 function exportPDF(){
+    if(!lastResult) { alert("Veuillez calculer le résultat avant d'exporter."); return; }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const resultText = document.getElementById('result').innerText || "Aucun résultat à exporter.";
+
+    // Ajouter le logo
+    const img = document.getElementById("logo_header");
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img,0,0,img.width,img.height);
+    const imgData = canvas.toDataURL("image/png");
+    doc.addImage(imgData, "PNG", 15, 10, 50, 25);
+
     doc.setFontSize(16);
-    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 20, null, null, "center");
-    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 30, null, null, "center");
-    doc.text("---------------------------------------------", 105, 40, null, null, "center");
+    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 50, null, null, "center");
+    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 60, null, null, "center");
+    doc.text("---------------------------------------------", 20, 70);
+
     doc.setFontSize(14);
-    doc.text(resultText, 20, 60);
+    doc.text(`Projet : ${lastResult.titreProjet}`, 20, 80);
+    doc.text(`Endroit du test : ${lastResult.lieuTest}`, 20, 90);
+    doc.text(`Date du test : ${lastResult.dateTest}`, 20, 100);
+    doc.text(`Âge du béton : ${lastResult.age} jours`, 20, 110);
+    doc.text(`Fc estimée à 28j : ${lastResult.res28} MPa`, 20, 120);
+    doc.text(`Fc28 projet : ${lastResult.fc28Projet} MPa`, 20, 130);
+    doc.setTextColor(lastResult.conforme ? 0 : 255, 0, 0); // rouge si non conforme
+    doc.text(lastResult.conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, 140);
+
     doc.save("rapport_fc28.pdf");
 }
 </script>
