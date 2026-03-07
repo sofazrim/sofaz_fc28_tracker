@@ -30,13 +30,13 @@ button:hover {background-color: #3399ff;}
 
 <main>
 
-<h2>Calcul de résistance béton (Fc28)</h2>
+<h2>Estimation de résistance béton à 28 jours (Fc28)</h2>
 
 <label>Titre du projet :</label>
 <input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
 
 <label>Endroit du test :</label>
-<input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
+<input type="text" id="lieu_test" placeholder="Ex: Fondations, Dalle pleine, poteaux…">
 
 <label>Date de coulage :</label>
 <input type="date" id="date_coulage">
@@ -47,7 +47,7 @@ button:hover {background-color: #3399ff;}
 <label>Âge du béton (jours) :</label>
 <input type="number" id="age" readonly>
 
-<label>Résistance mesurée (MPa) :</label>
+<label>Résistance mesurée au laboratoire (MPa) :</label>
 <input type="number" id="resistance" placeholder="Ex: 18">
 
 <label>Fc28 projet (MPa) :</label>
@@ -99,7 +99,7 @@ const resultText =
 🧪 Résistance mesurée : ${resJour} MPa
 🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa
 🎯 Fc28 projet : ${fc28Projet} MPa
-${conforme ? "✅ Résultat : Conforme" : "❌ Résultat : Non Conforme"}`;
+${conforme ? "✅ Résultat : Conforme" : "❌ Résultat : Non Conforme, mesures techniques à prendre!!!"}`;
 
 const resultDiv=document.getElementById("result");
 
