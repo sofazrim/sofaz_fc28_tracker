@@ -87,6 +87,7 @@ function exportPDF(){
     doc.addImage(imgData, "PNG", 15, 10, 50, 25);
 
     doc.setFontSize(16);
+    doc.setTextColor(0,0,0);
     doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 50, null, null, "center");
     doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 60, null, null, "center");
     doc.text("---------------------------------------------", 20, 70);
@@ -102,7 +103,12 @@ function exportPDF(){
     doc.text(`Fc estimée : ${res28.toFixed(2)} MPa`, 20, startY + lineHeight*5);
     doc.text(`Fc28 projet : ${fc28Projet} MPa`, 20, startY + lineHeight*6);
 
-    doc.setTextColor(conforme ? 0 : 255, 0, 0);
+    // Seule la dernière ligne est rouge si non conforme
+    if(!conforme){
+        doc.setTextColor(255,0,0);
+    } else {
+        doc.setTextColor(0,0,0);
+    }
     doc.text(conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, startY + lineHeight*7);
 
     doc.save("rapport_fc28.pdf");
