@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOFAZ Fc28 Tracker™</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
 header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
@@ -18,90 +19,123 @@ button:hover {background-color: #3399ff;}
 #result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
 .result-line {display:block;}
 </style>
+
 </head>
 <body>
 
 <header>
-    <!-- Logo GitHub correct -->
-    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
-    <h1>SOFAZ Fc28 Tracker™</h1>
+<img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
+<h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
 <main>
+
 <h2>Calcul de résistance béton (Fc28)</h2>
 
-<label for="titre_projet">Titre du projet :</label>
+<label>Titre du projet :</label>
 <input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
 
-<label for="lieu_test">Endroit du test :</label>
+<label>Endroit du test :</label>
 <input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
 
-<label for="date_coulage">Date de coulage :</label>
+<label>Date de coulage :</label>
 <input type="date" id="date_coulage">
 
-<label for="age">Âge du béton (jours) :</label>
-<input type="number" id="age" placeholder="Ex: 7">
+<label>Date du test :</label>
+<input type="date" id="date_test">
 
-<label for="resistance">Résistance mesurée (MPa) :</label>
+<label>Âge du béton (jours) :</label>
+<input type="number" id="age" readonly>
+
+<label>Résistance mesurée (MPa) :</label>
 <input type="number" id="resistance" placeholder="Ex: 18">
 
-<label for="fc28">Fc28 projet (MPa) :</label>
+<label>Fc28 projet (MPa) :</label>
 <input type="number" id="fc28" placeholder="Ex: 25">
 
 <button onclick="calculFc28()">Calculer Fc28</button>
 <button onclick="exportPDF()">Exporter PDF</button>
 
 <div id="result"></div>
+
 </main>
 
 <script>
-function calculFc28() {
-    const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
-    const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
-    const dateCoulage = document.getElementById('date_coulage').value;
-    const age = parseFloat(document.getElementById('age').value);
-    const resJour = parseFloat(document.getElementById('resistance').value);
-    const fc28Projet = parseFloat(document.getElementById('fc28').value);
 
-    if(!dateCoulage || isNaN(age) || isNaN(resJour) || isNaN(fc28Projet) || age<=0 || resJour<=0 || fc28Projet<=0){
-        document.getElementById('result').innerText = "⚠️ Veuillez entrer des valeurs valides.";
-        document.getElementById('result').style.color = "red";
-        return;
-    }
+function calculFc28(){
 
-    // Calcul exact comme ton code Python
-    const res28 = resJour * Math.pow(28/age, 0.5);
-    const dateTest = new Date(dateCoulage);
-    dateTest.setDate(dateTest.getDate() + age);
-    const conforme = res28 >= fc28Projet;
+const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
+const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
 
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = `
-🏷️ Projet : ${titreProjet}
+const dateCoulageStr = document.getElementById('date_coulage').value;
+const dateTestStr = document.getElementById('date_test').value;
+
+const resJour = parseFloat(document.getElementById('resistance').value);
+const fc28Projet = parseFloat(document.getElementById('fc28').value);
+
+if(!dateCoulageStr || !dateTestStr || isNaN(resJour) || isNaN(fc28Projet)){
+document.getElementById('result').innerText="⚠️ Veuillez entrer des valeurs valides.";
+return;
+}
+
+const dateCoulage = new Date(dateCoulageStr);
+const dateTest = new Date(dateTestStr);
+
+const diffTime = dateTest - dateCoulage;
+const age = Math.floor(diffTime/(1000*60*60*24)) + 1;
+
+document.getElementById("age").value = age;
+
+const res28 = resJour*Math.pow(28/age,0.5);
+
+const conforme = res28>=fc28Projet;
+
+const resultText =
+`🏷️ Projet : ${titreProjet}
 📍 Endroit du test : ${lieuTest}
+📅 Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}
 📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}
 🧱 Âge du béton : ${age} jours
+🧪 Résistance mesurée : ${resJour} MPa
 🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa
 🎯 Fc28 projet : ${fc28Projet} MPa
-<span class="result-line" style="color:${conforme ? 'green' : 'red'}">
-${conforme ? '✅ Résultat : Conforme' : '❌ Résultat : Non Conforme'}
-</span>
-`;
+${conforme ? "✅ Résultat : Conforme" : "❌ Résultat : Non Conforme"}`;
+
+const resultDiv=document.getElementById("result");
+
+resultDiv.innerHTML=resultText.replace(
+/(Résultat : Conforme|Résultat : Non Conforme)/,
+match=>`<span class="result-line" style="color:${conforme?'green':'red'}">${match}</span>`
+);
+
+window.resultPDF=resultText;
+
 }
 
-// Export PDF simple avec jspdf
 function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const resultText = document.getElementById('result').innerText || "Aucun résultat à exporter.";
-    doc.setFontSize(16);
-    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 20, null, null, "center");
-    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 30, null, null, "center");
-    doc.text("---------------------------------------------", 105, 40, null, null, "center");
-    doc.setFontSize(14);
-    doc.text(resultText, 20, 60);
-    doc.save("rapport_fc28.pdf");
+
+const {jsPDF}=window.jspdf;
+
+const doc=new jsPDF();
+
+doc.setFont("Helvetica");
+
+doc.setFontSize(16);
+doc.text("Rapport - SOFAZ Fc28 Tracker™",105,20,null,null,"center");
+
+doc.setFontSize(12);
+doc.text("Développé par Ing. Fathi ZERRIOUH",105,30,null,null,"center");
+
+doc.text("---------------------------------------------",105,40,null,null,"center");
+
+const lines=doc.splitTextToSize(window.resultPDF||"Aucun résultat.",170);
+
+doc.text(lines,20,60);
+
+doc.save("rapport_fc28.pdf");
+
 }
+
 </script>
 
 </body>
