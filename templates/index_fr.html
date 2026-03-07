@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOFAZ Fc28 Tracker™</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
 header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
@@ -14,14 +15,15 @@ label {display:block; margin-top:15px;}
 input[type="number"], input[type="date"], input[type="text"] {width:100%; padding:10px; font-size:16px; border-radius:6px; border:1px solid #ccc;}
 button {background-color: #4da6ff; color:white; border:none; padding:12px 20px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:20px; width:100%;}
 button:hover {background-color: #3399ff;}
-#result {margin-top:25px; font-weight:bold; font-size:18px; white-space:pre-line;}
+#result {margin-top:25px; font-weight:bold; text-align:center; font-size:18px; white-space:pre-line;}
 .result-line {display:block;}
 </style>
 </head>
 <body>
 
 <header>
-    <img src="logo_sofaz.png" alt="Logo SOFAZ">
+    <!-- Logo GitHub correct -->
+    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ">
     <h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
@@ -37,6 +39,9 @@ button:hover {background-color: #3399ff;}
 <label for="date_coulage">Date de coulage :</label>
 <input type="date" id="date_coulage">
 
+<label for="age">Âge du béton (jours) :</label>
+<input type="number" id="age" placeholder="Ex: 7">
+
 <label for="resistance">Résistance mesurée (MPa) :</label>
 <input type="number" id="resistance" placeholder="Ex: 18">
 
@@ -44,46 +49,58 @@ button:hover {background-color: #3399ff;}
 <input type="number" id="fc28" placeholder="Ex: 25">
 
 <button onclick="calculFc28()">Calculer Fc28</button>
+<button onclick="exportPDF()">Exporter PDF</button>
 
 <div id="result"></div>
 </main>
 
 <script>
 function calculFc28() {
-    const titre = document.getElementById('titre_projet').value || "Non renseigné";
-    const lieu = document.getElementById('lieu_test').value || "Non renseigné";
-    const dateCoulageStr = document.getElementById('date_coulage').value;
+    const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
+    const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
+    const dateCoulage = document.getElementById('date_coulage').value;
+    const age = parseFloat(document.getElementById('age').value);
     const resJour = parseFloat(document.getElementById('resistance').value);
     const fc28Projet = parseFloat(document.getElementById('fc28').value);
 
-    if(!dateCoulageStr || isNaN(resJour) || isNaN(fc28Projet) || resJour<=0 || fc28Projet<=0){
-        const resDiv = document.getElementById('result');
-        resDiv.innerText = "⚠️ Veuillez entrer des valeurs valides.";
-        resDiv.style.color = "red";
+    if(!dateCoulage || isNaN(age) || isNaN(resJour) || isNaN(fc28Projet) || age<=0 || resJour<=0 || fc28Projet<=0){
+        document.getElementById('result').innerText = "⚠️ Veuillez entrer des valeurs valides.";
+        document.getElementById('result').style.color = "red";
         return;
     }
 
-    const dateCoulage = new Date(dateCoulageStr);
-    const today = new Date();
-    const age = Math.round((today - dateCoulage) / (1000*60*60*24));
-    const res28 = resJour * Math.pow(28/age,0.5);
+    // Calcul exact comme ton code Python
+    const res28 = resJour * Math.pow(28/age, 0.5);
     const dateTest = new Date(dateCoulage);
     dateTest.setDate(dateTest.getDate() + age);
     const conforme = res28 >= fc28Projet;
 
-    const resDiv = document.getElementById('result');
-    resDiv.innerHTML = `
-🏷️ Projet : ${titre}
-📍 Endroit du test : ${lieu}
-📅 Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = `
+🏷️ Projet : ${titreProjet}
+📍 Endroit du test : ${lieuTest}
 📅 Date du test : ${dateTest.toLocaleDateString('fr-FR')}
 🧱 Âge du béton : ${age} jours
-🧪 Fc estimée : ${res28.toFixed(2)} MPa
+🧪 Fc estimée à 28j : ${res28.toFixed(2)} MPa
 🎯 Fc28 projet : ${fc28Projet} MPa
-<span class="result-line" style="color:${conforme ? 'black':'red'}">
+<span class="result-line" style="color:${conforme ? 'green' : 'red'}">
 ${conforme ? '✅ Résultat : Conforme' : '❌ Résultat : Non Conforme'}
 </span>
 `;
+}
+
+// Export PDF simple avec jspdf
+function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const resultText = document.getElementById('result').innerText || "Aucun résultat à exporter.";
+    doc.setFontSize(16);
+    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 20, null, null, "center");
+    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 30, null, null, "center");
+    doc.text("---------------------------------------------", 105, 40, null, null, "center");
+    doc.setFontSize(14);
+    doc.text(resultText, 20, 60);
+    doc.save("rapport_fc28.pdf");
 }
 </script>
 
