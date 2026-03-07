@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOFAZ Fc28 Tracker™</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body {font-family: Arial, sans-serif; background-color: #f2f5f7; margin:0; padding:0;}
 header {background-color: #4da6ff; color:white; padding:20px; text-align:center;}
@@ -20,100 +19,35 @@ button:hover {background-color: #3399ff;}
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/sofazrim/sofaz_fc28_tracker/main/logo_sofaz.png" alt="Logo SOFAZ" id="logo_header">
+    <img src="/static/logo_sofaz.png" alt="Logo SOFAZ">
     <h1>SOFAZ Fc28 Tracker™</h1>
 </header>
 
 <main>
 <h2>Exporter PDF Fc28</h2>
 
+<form method="POST" action="/calculer">
 <label for="titre_projet">Titre du projet :</label>
-<input type="text" id="titre_projet" placeholder="Ex: Construction bâtiment X">
+<input type="text" name="titre_projet" id="titre_projet" placeholder="Ex: Construction bâtiment X" required>
 
 <label for="lieu_test">Endroit du test :</label>
-<input type="text" id="lieu_test" placeholder="Ex: Fondations, poteaux…">
+<input type="text" name="lieu_test" id="lieu_test" placeholder="Ex: Fondations, poteaux…" required>
 
 <label for="date_coulage">Date de coulage :</label>
-<input type="date" id="date_coulage">
+<input type="date" name="date_coulage" id="date_coulage" required>
 
 <label for="date_test">Date du test :</label>
-<input type="date" id="date_test">
+<input type="date" name="date_test" id="date_test" required>
 
 <label for="resistance">Résistance mesurée (MPa) :</label>
-<input type="number" id="resistance" placeholder="Ex: 18">
+<input type="number" name="resistance" id="resistance" placeholder="Ex: 18" step="0.01" required>
 
 <label for="fc28">Fc28 projet (MPa) :</label>
-<input type="number" id="fc28" placeholder="Ex: 25">
+<input type="number" name="fc28" id="fc28" placeholder="Ex: 25" step="0.01" required>
 
-<button onclick="exportPDF()">Exporter PDF</button>
-
+<button type="submit">Générer PDF</button>
+</form>
 </main>
-
-<script>
-function exportPDF() {
-    const titreProjet = document.getElementById('titre_projet').value || "Non renseigné";
-    const lieuTest = document.getElementById('lieu_test').value || "Non renseigné";
-    const dateCoulageStr = document.getElementById('date_coulage').value;
-    const dateTestStr = document.getElementById('date_test').value;
-    const resJour = parseFloat(document.getElementById('resistance').value);
-    const fc28Projet = parseFloat(document.getElementById('fc28').value);
-
-    if(!dateCoulageStr || !dateTestStr || isNaN(resJour) || isNaN(fc28Projet) || resJour<=0 || fc28Projet<=0){
-        alert("⚠️ Veuillez entrer des valeurs valides.");
-        return;
-    }
-
-    const dateCoulage = new Date(dateCoulageStr);
-    const dateTest = new Date(dateTestStr);
-    const age = Math.round((dateTest - dateCoulage)/(1000*60*60*24));
-    if(age <= 0){
-        alert("⚠️ La date de test doit être après la date de coulage.");
-        return;
-    }
-
-    // Calcul Fc28 estimée
-    const res28 = resJour * Math.pow(28/age, 0.5);
-    const conforme = res28 >= fc28Projet;
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Ajouter le logo correctement
-    const img = document.getElementById("logo_header");
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img,0,0,img.width,img.height);
-    const imgData = canvas.toDataURL("image/png");
-    doc.addImage(imgData, "PNG", 15, 10, 50, 25);
-
-    // Titre du PDF
-    doc.setFontSize(16);
-    doc.setTextColor(0,0,0);
-    doc.text("Rapport - SOFAZ Fc28 Tracker (TM)", 105, 50, null, null, "center");
-    doc.text("Développé par Ing. Fathi ZERRIOUH", 105, 60, null, null, "center");
-    doc.text("---------------------------------------------", 20, 70);
-
-    // Résultats
-    doc.setFontSize(14);
-    const startY = 80;
-    const lineHeight = 10;
-    doc.text(`Projet : ${titreProjet}`, 20, startY);
-    doc.text(`Endroit du test : ${lieuTest}`, 20, startY + lineHeight);
-    doc.text(`Date de coulage : ${dateCoulage.toLocaleDateString('fr-FR')}`, 20, startY + lineHeight*2);
-    doc.text(`Date du test : ${dateTest.toLocaleDateString('fr-FR')}`, 20, startY + lineHeight*3);
-    doc.text(`Âge du béton : ${age} jours`, 20, startY + lineHeight*4);
-    doc.text(`Fc estimée : ${res28.toFixed(2)} MPa`, 20, startY + lineHeight*5);
-    doc.text(`Fc28 projet : ${fc28Projet} MPa`, 20, startY + lineHeight*6);
-
-    // Résultat final rouge si non conforme
-    doc.setTextColor(conforme ? 0 : 255, 0, 0);
-    doc.text(conforme ? "Résultat : Conforme" : "Résultat : Non Conforme", 20, startY + lineHeight*7);
-
-    doc.save("rapport_fc28.pdf");
-}
-</script>
 
 </body>
 </html>
